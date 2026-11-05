@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="ta">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#1f6f5c">
+<title>Voice Billing · குரல் பில்</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:"Noto Sans Tamil","Nirmala UI",system-ui,sans-serif;background:#f4f1ea;color:#1d1d1d;font-size:17px}
+header{background:#1f6f5c;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:5;flex-wrap:wrap;gap:6px}
+header h1{font-size:19px;margin:0}
+header .hb{display:flex;gap:4px;flex-wrap:wrap}
+header button{background:none;border:1px solid #ffffff99;color:#fff;border-radius:8px;padding:6px 10px;font-size:14px;font-family:inherit}
+header button.lang{background:#ffffff22;font-weight:700}
+main{padding:12px;max-width:560px;margin:0 auto 40px}
+#mic{width:100%;padding:24px 10px;border:0;border-radius:18px;background:#1f6f5c;color:#fff;font-size:22px;font-weight:600;box-shadow:0 3px 0 #164f41;font-family:inherit}
+#mic.on{background:#c0392b;box-shadow:0 3px 0 #8e2a20;animation:pulse 1s infinite}
+#mic:disabled{background:#999;box-shadow:none}
+#mic:active{transform:translateY(2px)}
+@keyframes pulse{50%{opacity:.7}}
+#status{min-height:46px;padding:10px 4px;color:#444;font-size:16px}
+#status.err{color:#b00020}
+#card{display:none;background:#fff;border-radius:16px;padding:14px;text-align:center;margin:6px 0 14px;box-shadow:0 1px 6px #0001}
+#cardPic{height:130px;display:flex;align-items:center;justify-content:center;font-size:96px}
+#cardPic img{max-height:130px;max-width:100%;border-radius:12px;object-fit:cover}
+#cardName{font-size:22px;font-weight:700;margin-top:6px}
+#cardQty{font-size:18px;color:#555;margin-top:2px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0 16px}
+.tile{background:#fff;border:0;border-radius:14px;padding:6px 2px 8px;text-align:center;font-size:14px;box-shadow:0 1px 3px #0001;color:#222;font-family:inherit}
+.tile:active{background:#e4f0ec}
+.tile small{color:#777;font-size:11px}
+.pic{display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:34px}
+.tile .pic{height:50px}
+.tile .pic img{max-height:50px;max-width:100%;border-radius:8px;object-fit:cover}
+h2{font-size:16px;margin:14px 0 6px;color:#555}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px #0001}
+td,th{padding:8px 6px;border-bottom:1px solid #eee;text-align:left;vertical-align:middle}
+th{font-size:13px;color:#777;font-weight:600}
+td.pc{width:50px;font-size:28px;padding-right:0}
+td.pc img{width:44px;height:44px;object-fit:cover;border-radius:8px}
+td small{color:#777}
+.r{text-align:right;white-space:nowrap}
+.qc{white-space:nowrap}
+.qb{border:1px solid #bbb;background:#fff;border-radius:8px;width:30px;height:30px;font-size:18px;padding:0}
+.qv{display:inline-block;min-width:64px;text-align:center;font-size:15px}
+.x{border:0;background:none;color:#c0392b;font-size:18px;padding:4px}
+.total{display:flex;justify-content:space-between;align-items:center;background:#1f6f5c;color:#fff;border-radius:14px;padding:14px 16px;margin-top:12px;font-size:22px;font-weight:700}
+.actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+.actions button{padding:13px 4px;border:0;border-radius:12px;font-size:15px;font-weight:600;background:#fff;box-shadow:0 1px 3px #0002;font-family:inherit}
+.actions .pri{background:#e8a317;color:#222}
+#manual{display:flex;gap:8px;margin-top:14px}
+#manual input{flex:1;min-width:0;padding:12px;font-size:16px;border:1px solid #ccc;border-radius:12px;font-family:inherit}
+#manual button{padding:12px 16px;border:0;border-radius:12px;background:#1f6f5c;color:#fff;font-size:16px;font-family:inherit}
+.empty{color:#888;text-align:center;padding:18px;background:#fff;border-radius:14px}
+dialog{border:0;border-radius:16px;padding:16px;width:min(94vw,460px);font-family:inherit;max-height:90vh;overflow:auto}
+dialog::backdrop{background:#0006}
+dialog h3{margin:8px 0 8px}
+dialog input,dialog select,dialog textarea{width:100%;padding:10px;font-size:16px;margin:4px 0 10px;border:1px solid #ccc;border-radius:10px;font-family:inherit}
+dialog textarea{min-height:110px;resize:vertical}
+.row{display:flex;gap:8px}
+.row>*{flex:1}
+.btn{padding:12px;border:0;border-radius:12px;background:#1f6f5c;color:#fff;font-size:16px;font-family:inherit}
+.btn.alt{background:#eee;color:#222}
+.item-edit{background:#f7f7f4;border-radius:12px;padding:8px;margin-bottom:8px;display:flex;gap:8px;align-items:center}
+.item-edit .ph{width:52px;height:52px;font-size:32px;flex:none;background:#fff;border-radius:10px}
+.item-edit .ph img{width:52px;height:52px;object-fit:cover;border-radius:10px}
+.item-edit .info{flex:1;font-size:15px}
+.item-edit .info small{color:#777}
+.pin{width:78px!important;margin:0!important;padding:6px!important}
+.hrow{padding:12px;border-bottom:1px solid #eee;font-size:16px}
+.hrow:active{background:#eef6f3}
+.bh{text-align:center;margin-bottom:8px;font-size:16px}
+.bh div{color:#666;font-size:13px}
+.bt{box-shadow:none;border:1px solid #ddd}
+.bt th,.bt td{font-size:14px}
+.bt .tt td{font-weight:700;border-bottom:0}
+.foot{text-align:center;margin-top:10px;color:#666;font-size:14px}
+.hint{font-size:13px;color:#777;margin:0 0 6px}
+#printArea{display:none}
+@media print{
+  body *{visibility:hidden}
+  #printArea,#printArea *{visibility:visible}
+  #printArea{display:block;position:absolute;left:0;top:0;width:100%;padding:10px;font-size:13px;color:#000;background:#fff}
+  #printArea table{box-shadow:none;border:1px solid #000}
+  #printArea th,#printArea td{border-bottom:1px solid #999;color:#000}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1 data-i18n="title"></h1>
+  <div class="hb">
+    <button id="btnLang" class="lang"></button>
+    <button id="btnItems" data-i18n="items"></button>
+    <button id="btnHist" data-i18n="hist"></button>
+  </div>
+</header>
+
+<main>
+  <button id="mic"></button>
+  <div id="status"></div>
+
+  <div id="card">
+    <div id="cardPic"></div>
+    <div id="cardName"></div>
+    <div id="cardQty"></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <form id="manual" autocomplete="off">
+    <input id="typed" data-ph="typePh">
+    <button type="submit" data-i18n="add"></button>
+  </form>
+
+  <h2 data-i18n="cartTitle"></h2>
+  <div id="lines"></div>
+  <div class="total"><span data-i18n="total"></span><span id="total">₹0</span></div>
+
+  <div class="actions">
+    <button id="btnClear" data-i18n="clear"></button>
+    <button id="btnShare" data-i18n="draft"></button>
+    <button class="pri" id="btnBill" data-i18n="bill"></button>
+  </div>
+</main>
+
+<!-- Items, prices and daily price update -->
+<dialog id="itemsDlg">
+  <h3 data-i18n="itemsTitle"></h3>
+  <label data-i18n="shopNameLabel"></label>
+  <input id="shopName">
+  <div id="itemsList"></div>
+
+  <h3 data-i18n="updateTitle"></h3>
+  <p class="hint" data-i18n="updateHint"></p>
+  <textarea id="priceIn" data-ph="updatePh"></textarea>
+  <button class="btn" id="applyPrices" style="width:100%" data-i18n="updateBtn"></button>
+
+  <h3 data-i18n="newItem"></h3>
+  <input id="nTa" data-ph="nameTa">
+  <input id="nEn" data-ph="nameEn">
+  <input id="nAlias" data-ph="alias">
+  <div class="row">
+    <input id="nPrice" type="number" min="0" step="0.5" data-ph="price">
+    <select id="nUnit"></select>
+  </div>
+  <input id="nEmoji" data-ph="emojiPh">
+  <div class="row">
+    <button class="btn" id="addItem" data-i18n="save"></button>
+    <button class="btn alt" id="closeItems" data-i18n="close"></button>
+  </div>
+  <input id="photoIn" type="file" accept="image/*" hidden>
+</dialog>
+
+<!-- Bill history -->
+<dialog id="histDlg">
+  <h3 data-i18n="histTitle"></h3>
+  <div id="histList"></div>
+  <div class="row" style="margin-top:10px"><button class="btn alt" id="closeHist" data-i18n="close"></button></div>
+</dialog>
+
+<!-- Bill view -->
+<dialog id="billDlg">
+  <div id="billBody"></div>
+  <div class="row" style="margin-top:12px">
+    <button class="btn" id="billPrint" data-i18n="print"></button>
+    <button class="btn" id="billShare" data-i18n="whatsapp"></button>
+    <button class="btn alt" id="billClose" data-i18n="close"></button>
+  </div>
+</dialog>
+
+<div id="printArea"></div>
+
+<script>
+/* ================= LANGUAGE ================= */
+const I18N = {
+  ta: {
+    title:'குரல் பில்', items:'விலைகள்', hist:'பில்கள்',
+    micIdle:'🎤 பேசுங்கள்', micOn:'⏹ கேட்கிறது… (நிறுத்த தட்டவும்)', micStart:'பேசுங்கள்…',
+    hint:'எ.கா. "தக்காளி இரண்டு கிலோ" — பிறகு "பில் போடு" என்று சொல்லுங்கள்',
+    typePh:'தட்டச்சு: தக்காளி 2 கிலோ', add:'சேர்', cartTitle:'பில் பொருட்கள்',
+    total:'மொத்தம்', clear:'அழி', draft:'வரைவு (WhatsApp)', bill:'பில் போடு',
+    emptyCart:'பொருட்களைப் பேசுங்கள் அல்லது கீழே உள்ள படத்தைத் தட்டுங்கள்',
+    itemsTitle:'பொருட்கள் & விலைகள்', shopNameLabel:'கடை பெயர்',
+    updateTitle:'தினசரி விலை மாற்றம்', updateHint:'ஒரு வரிக்கு ஒரு பொருள்: பெயர், விலை (எ.கா. தக்காளி, 32)',
+    updatePh:'தக்காளி, 32\nவெங்காயம், 42\nஅரிசி, 56', updateBtn:'விலைகளைப் பதிவு செய்',
+    updated:'{n} விலைகள் புதுப்பிக்கப்பட்டன', notFound:'கண்டுபிடிக்கவில்லை: {names}',
+    newItem:'புதிய பொருள்', nameTa:'பெயர் (தமிழ்)', nameEn:'Name (English)',
+    alias:'மாற்றுப் பெயர்கள் (கமா இட்டு)', price:'விலை ₹', emojiPh:'படம் (emoji) — எ.கா. 🍅',
+    save:'சேர்', close:'மூடு', confirmDel:'இந்த பொருளை நீக்கவா?', photoTitle:'படம் மாற்ற',
+    histTitle:'முந்தைய பில்கள்', noBills:'பில்கள் இல்லை', billNo:'பில் எண்', draftLabel:'வரைவு',
+    print:'🖨 அச்சிடு', whatsapp:'WhatsApp', colItem:'பொருள்', colQty:'அளவு', colAmt:'தொகை',
+    thanks:'நன்றி! மீண்டும் வருக',
+    added:'சேர்த்தது: {msg}', unheard:'(அளவு கேட்கவில்லை — 1 என எடுத்தேன்)',
+    undone:'நீக்கியது: {name}', noItems:'பில்லில் பொருட்கள் இல்லை',
+    billDone:'பில் {n} போடப்பட்டது — {total}', cleared:'பில் அழிக்கப்பட்டது',
+    confirmClear:'பில் முழுவதையும் அழிக்கவா?',
+    notUnderstood:'புரியவில்லை: "{t}" — மீண்டும் சொல்லுங்கள் அல்லது தட்டச்சு செய்யவும்',
+    saveFail:'சேமிக்க முடியவில்லை — நினைவகம் நிரம்பியது', photoFail:'படம் ஏற்ற முடியவில்லை',
+    needName:'பொருளின் பெயர் தேவை', itemAdded:'{name} சேர்க்கப்பட்டது',
+    resume:'முந்தைய பில் தொடர்கிறது', noVoice:'இந்த உலாவியில் குரல் வசதி இல்லை. Chrome-ஐ பயன்படுத்தவும். கீழே தட்டச்சு செய்யலாம்.',
+    retry:'சில நொடிகள் கழித்து மீண்டும் தட்டவும்', tile:'{name} 1 {unit} சேர்த்தது',
+    spokenAdded:'{msg} சேர்க்கப்பட்டது', spokenBill:'பில் போடப்பட்டது. மொத்தம் {n} ரூபாய்',
+    unitLabels:{kg:'கிலோ', g:'கிராம்', piece:'எண்ணிக்கை', litre:'லிட்டர்', packet:'பாக்கெட்'},
+    err:{
+      'not-allowed':'மைக் அனுமதி தேவை — Chrome அமைப்புகளில் மைக்கை அனுமதிக்கவும்',
+      'service-not-allowed':'மைக் அனுமதி தேவை',
+      'no-speech':'எதுவும் கேட்கவில்லை — மீண்டும் தட்டவும்',
+      'network':'இணைய இணைப்பு தேவை (குரல் சேவைக்கு)',
+      'language-not-supported':'இந்த மொழிக்கு குரல் ஆதரவு இல்லை',
+      'audio-capture':'மைக் வேலை செய்யவில்லை'
+    },
+    speechLang:'ta-IN', toggleLabel:'EN'
+  },
+  en: {
+    title:'Voice Billing', items:'Prices', hist:'Bills',
+    micIdle:'🎤 Speak', micOn:'⏹ Listening… (tap to stop)', micStart:'Speak now…',
+    hint:'Try: "tomato two kilo" — then say "bill"',
+    typePh:'Type: tomato 2 kilo', add:'Add', cartTitle:'Bill items',
+    total:'Total', clear:'Clear', draft:'Draft (WhatsApp)', bill:'Make bill',
+    emptyCart:'Say an item or tap a picture below',
+    itemsTitle:'Items & prices', shopNameLabel:'Shop name',
+    updateTitle:'Daily price update', updateHint:'One item per line: name, price (e.g. tomato, 32)',
+    updatePh:'tomato, 32\nonion, 42\nrice, 56', updateBtn:'Apply prices',
+    updated:'{n} prices updated', notFound:'Not found: {names}',
+    newItem:'New item', nameTa:'Name (Tamil)', nameEn:'Name (English)',
+    alias:'Other names (comma separated)', price:'Price ₹', emojiPh:'Picture (emoji) e.g. 🍅',
+    save:'Save', close:'Close', confirmDel:'Delete this item?', photoTitle:'Change photo',
+    histTitle:'Past bills', noBills:'No bills yet', billNo:'Bill', draftLabel:'Draft',
+    print:'🖨 Print', whatsapp:'WhatsApp', colItem:'Item', colQty:'Qty', colAmt:'Amount',
+    thanks:'Thank you! Please visit again',
+    added:'Added: {msg}', unheard:'(quantity not heard — took 1)',
+    undone:'Removed: {name}', noItems:'No items in the bill',
+    billDone:'Bill {n} made — {total}', cleared:'Bill cleared',
+    confirmClear:'Clear the whole bill?',
+    notUnderstood:'Did not understand: "{t}" — say it again or type it',
+    saveFail:'Could not save — storage full', photoFail:'Could not load photo',
+    needName:'Item name is required', itemAdded:'{name} added',
+    resume:'Continuing the previous bill', noVoice:'Voice is not supported in this browser. Use Chrome. You can type below.',
+    retry:'Tap again in a moment', tile:'{name} 1 {unit} added',
+    spokenAdded:'{msg} added', spokenBill:'Bill made. Total {n} rupees',
+    unitLabels:{kg:'kg', g:'g', piece:'pcs', litre:'litre', packet:'packet'},
+    err:{
+      'not-allowed':'Microphone permission needed — allow the mic in Chrome settings',
+      'service-not-allowed':'Microphone permission needed',
+      'no-speech':'Nothing heard — tap and try again',
+      'network':'Internet connection needed (for voice recognition)',
+      'language-not-supported':'Voice recognition not available for this language',
+      'audio-capture':'Microphone not working'
+    },
+    speechLang:'en-IN', toggleLabel:'தமிழ்'
+  }
+};
+
+/* ================= DATA ================= */
+const $ = id => document.getElementById(id);
+const K = {items:'tb.items.v1', cart:'tb.cart.v1', bills:'tb.bills.v1', shop:'tb.shop.v1', lang:'tb.lang.v1'};
+
+const DEFAULT_ITEMS = [
+  {id:'tomato',  ta:'தக்காளி',         en:'Tomato',   alias:['thakkali','takkali','tomatoes'],    unit:'kg',     price:30,  emoji:'🍅'},
+  {id:'onion',   ta:'வெங்காயம்',        en:'Onion',    alias:['vengayam','onions'],                unit:'kg',     price:40,  emoji:'🧅'},
+  {id:'potato',  ta:'உருளைக்கிழங்கு',   en:'Potato',   alias:['urulai','உருளை','potatoes'],         unit:'kg',     price:35,  emoji:'🥔'},
+  {id:'carrot',  ta:'கேரட்',            en:'Carrot',   alias:['carot','carrots'],                  unit:'kg',     price:60,  emoji:'🥕'},
+  {id:'banana',  ta:'வாழைப்பழம்',        en:'Banana',   alias:['vazhaipazham','வாழை','bananas'],     unit:'piece',  price:6,   emoji:'🍌'},
+  {id:'rice',    ta:'அரிசி',            en:'Rice',     alias:['arisi'],                            unit:'kg',     price:55,  emoji:'🍚'},
+  {id:'dal',     ta:'துவரம் பருப்பு',    en:'Toor Dal', alias:['பருப்பு','toor dal','dal'],            unit:'kg',     price:120, emoji:'🫘'},
+  {id:'milk',    ta:'பால்',             en:'Milk',     alias:['paal'],                             unit:'packet', price:28,  emoji:'🥛'},
+  {id:'egg',     ta:'முட்டை',           en:'Egg',      alias:['muttai','eggs'],                    unit:'piece',  price:7,   emoji:'🥚'},
+  {id:'coconut', ta:'தேங்காய்',          en:'Coconut',  alias:['thengai','coconuts'],               unit:'piece',  price:25,  emoji:'🥥'},
+  {id:'oil',     ta:'எண்ணெய்',           en:'Oil',      alias:['ennai'],                            unit:'litre',  price:150, emoji:'🛢️'},
+  {id:'sugar',   ta:'சர்க்கரை',          en:'Sugar',    alias:['sakkarai'],                         unit:'kg',     price:45,  emoji:'🍬'}
+];
+
+const WORDS = {
+  'ஒன்று':1,'ஒரு':1,'ஒண்ணு':1,'one':1,'a':1,'an':1,
+  'இரண்டு':2,'ரெண்டு':2,'two':2,
+  'மூன்று':3,'மூணு':3,'three':3,
+  'நான்கு':4,'நாலு':4,'four':4,
+  'ஐந்து':5,'அஞ்சு':5,'five':5,
+  'ஆறு':6,'six':6,'ஏழு':7,'seven':7,
+  'எட்டு':8,'eight':8,'ஒன்பது':9,'ஒம்பது':9,'nine':9,
+  'பத்து':10,'ten':10,'இருபது':20,'twenty':20,'முப்பது':30,'thirty':30,'நாற்பது':40,'ஐம்பது':50,'fifty':50,
+  'அரை':0.5,'half':0.5,'கால்':0.25,'quarter':0.25,
+  'ஒன்றரை':1.5,'ஒன்னரை':1.5,'இரண்டரை':2.5,'one and a half':1.5
+};
+
+let lang  = localStorage.getItem(K.lang) || 'ta';
+let items = load(K.items, DEFAULT_ITEMS);
+let cart  = load(K.cart, []);
+let bills = load(K.bills, []);
+let shop  = localStorage.getItem(K.shop) || (lang === 'en' ? 'Our Shop' : 'எங்கள் கடை');
+let photoTarget = null;
+
+const T = (k, v = {}) => {
+  let s = (I18N[lang] && I18N[lang][k] !== undefined) ? I18N[lang][k] : (I18N.en[k] ?? k);
+  for(const [a, b] of Object.entries(v)) s = s.split('{' + a + '}').join(b);
+  return s;
+};
+const uomL = u => (I18N[lang].unitLabels[u]) || u;
+const nm = it => lang === 'en' ? (it.en || it.ta || '?') : (it.ta || it.en || '?');
+const fmtDate = d => new Date(d).toLocaleString(lang === 'en' ? 'en-IN' : 'en-IN', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
+
+function load(k, d){ try{ const v = JSON.parse(localStorage.getItem(k)); return v ?? d; }catch(e){ return d; } }
+function save(){
+  try{
+    localStorage.setItem(K.items, JSON.stringify(items));
+    localStorage.setItem(K.cart,  JSON.stringify(cart));
+    localStorage.setItem(K.bills, JSON.stringify(bills));
+    localStorage.setItem(K.shop,  shop);
+  }catch(e){ setStatus(T('saveFail'), true); }
+}
+
+/* ================= HELPERS ================= */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s)
+  .normalize('NFC')
+  .replace(/[௦-௯]/g, c => String(c.charCodeAt(0) - 0x0BE6))   // Tamil digits -> 0-9
+  .toLowerCase()
+  .replace(/[,!?।]/g, ' ')
+  .replace(/\.(?!\d)|(?<!\d)\./g, ' ')                          // keep decimals like 2.5
+  .replace(/\s+/g, ' ').trim();
+const r2  = x => Math.round(x * 1000) / 1000;
+const r2m = x => Math.round(x * 100) / 100;
+const fq  = q => Number(q).toLocaleString('en-IN', {maximumFractionDigits: 3});
+const fmt = n => '₹' + Number(n).toLocaleString('en-IN', {maximumFractionDigits: 2});
+const stepFor = u => u === 'g' ? 100 : u === 'kg' ? 0.5 : 1;
+const itemById = id => items.find(i => i.id === id);
+const picHTML = it => it.photo ? `<img src="${it.photo}" alt="">` : `<span>${esc(it.emoji || '🛒')}</span>`;
+const last = a => a[a.length - 1];
+const isGram = t => t.startsWith('கிராம்') || ['g','gm','gms','gram','grams'].includes(t);
+const hasAny = (tokens, words) => tokens.some(t => words.includes(t));
+
+function calc(it, l){ if(!it) return 0; return it.price * (l.uom === 'g' ? l.qty / 1000 : l.qty); }
+function setStatus(msg, err){ const s = $('status'); s.textContent = msg; s.classList.toggle('err', !!err); }
+function speak(text){
+  try{
+    if(!('speechSynthesis' in window)) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = I18N[lang].speechLang; u.rate = 0.95;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* ================= VOICE / TEXT PARSING ================= */
+function aliasList(){
+  const out = [];
+  for(const it of items){
+    for(const a of [it.ta, it.en, ...(it.alias || [])]){
+      const n = norm(a || '');
+      if(n) out.push({a:n, item:it});
+    }
+  }
+  return out.sort((x, y) => y.a.length - x.a.length);   // longest first
+}
+
+function findMatches(t, list){
+  const used = new Array(t.length).fill(false);
+  const hits = [];
+  for(const {a, item} of list){
+    const latin = /^[a-z0-9 ]+$/.test(a);
+    let i = t.indexOf(a);
+    while(i !== -1){
+      const end = i + a.length;
+      // English words must stand alone (optionally with a plural 's'); Tamil allows suffixes
+      const bEnd = end === t.length || t[end] === ' ' || (t[end] === 's' && (end + 1 === t.length || t[end + 1] === ' '));
+      let free = !latin || ((i === 0 || t[i-1] === ' ') && bEnd);
+      if(free) for(let k = i; k < end; k++) if(used[k]){ free = false; break; }
+      if(free){
+        for(let k = i; k < end; k++) used[k] = true;
+        hits.push({item, start:i, end});
+      }
+      i = t.indexOf(a, i + 1);
+    }
+  }
+  return hits.sort((x, y) => x.start - y.start);
+}
+
+function parseQty(seg){
+  let qty = null, gram = false;
+  for(const tok of seg.split(' ')){
+    if(!tok) continue;
+    if(isGram(tok)) gram = true;
+    if(qty === null){
+      if(/^\d+(\.\d+)?$/.test(tok)) qty = parseFloat(tok);
+      else if(WORDS[tok] !== undefined) qty = WORDS[tok];
+    }
+  }
+  return {qty, gram};
+}
+
+// Turns one utterance (Tamil or English) into item hits + an optional command.
+// Convention: say the item name first, then its quantity ("tomato two kilo" / "தக்காளி இரண்டு கிலோ").
+function analyze(raw){
+  const t = norm(raw);
+  const tok = t.split(' ');
+  let cmd = null;
+  if(hasAny(tok, ['பில்','பில்போடு','bill'])) cmd = 'bill';
+  else if(hasAny(tok, ['அழி','clear'])) cmd = 'clear';
+  else if(hasAny(tok, ['நீக்கு','undo'])) cmd = 'undo';
+
+  const hits = findMatches(t, aliasList());
+  const out = hits.map((h, i) => {
+    const after  = t.slice(h.end, i + 1 < hits.length ? hits[i+1].start : t.length);
+    const before = i === 0 ? t.slice(0, h.start) : '';
+    let q = parseQty(after);
+    if(q.qty === null) q = parseQty(before);
+    const heard = q.qty !== null;
+    const qty = heard ? q.qty : 1;
+    let uom = h.item.unit;
+    if(h.item.unit === 'kg'){
+      if(q.gram) uom = 'g';
+      else if(heard && qty >= 50 && Number.isInteger(qty)) uom = 'g';   // "500" for tomato = 500 g
+    }
+    return {item:h.item, qty, uom, heard};
+  });
+  return {hits:out, cmd};
+}
+
+function handleInput(alts){
+  let chosen = null;
+  for(const a of alts){
+    const r = analyze(a);
+    if(r.hits.length || r.cmd){ chosen = r; break; }
+  }
+  if(!chosen){
+    setStatus(T('notUnderstood', {t: alts[0]}), true);
+    return;
+  }
+  apply(chosen);
+}
+
+function apply(r){
+  for(const h of r.hits) addLine(h.item, h.qty, h.uom);
+
+  if(r.hits.length){
+    const lastHit = last(r.hits);
+    showCard(lastHit.item, lastHit.qty, lastHit.uom);
+    const msg = r.hits.map(h => `${nm(h.item)} ${fq(h.qty)} ${uomL(h.uom)}`).join(', ');
+    const unheard = r.hits.some(h => !h.heard) ? ' ' + T('unheard') : '';
+    setStatus(T('added', {msg}) + unheard);
+    speak(T('spokenAdded', {msg}));
+  }
+  if(r.cmd === 'undo'){
+    if(cart.length){ const l = cart.pop(); setStatus(T('undone', {name: nm(itemById(l.itemId) || {})})); }
+    else setStatus(T('noItems'), true);
+  }
+  if(r.cmd === 'clear'){
+    if(cart.length && confirm(T('confirmClear'))){ cart = []; setStatus(T('cleared')); }
+  }
+  if(r.cmd === 'bill') finalizeBill();
+
+  save(); renderCart();
+}
+
+/* ================= CART ================= */
+function addLine(item, qty, uom){
+  const ex = cart.find(l => l.itemId === item.id && l.uom === uom);
+  if(ex) ex.qty = r2(ex.qty + qty);
+  else cart.push({itemId:item.id, qty:r2(qty), uom});
+  save(); renderCart();
+}
+
+function snapshot(){
+  return cart.map(l => {
+    const it = itemById(l.itemId);
+    return {
+      ta: it?.ta || '?', en: it?.en || '',
+      qty: l.qty, uom: l.uom,
+      price: it?.price || 0,
+      amount: r2m(calc(it, l))
+    };
+  });
+}
+const totalOf = lines => r2m(lines.reduce((s, l) => s + l.amount, 0));
+
+function renderCart(){
+  const box = $('lines');
+  if(!cart.length){
+    box.innerHTML = `<div class="empty">${T('emptyCart')}</div>`;
+  } else {
+    box.innerHTML = '<table>' + cart.map((l, i) => {
+      const it = itemById(l.itemId) || {ta:'?', en:'', emoji:'❔'};
+      const other = lang === 'en' ? it.ta : it.en;
+      return `<tr>
+        <td class="pc">${picHTML(it)}</td>
+        <td><b>${esc(nm(it))}</b><br><small>${esc(other || '')}</small></td>
+        <td class="qc">
+          <button class="qb" data-act="dec" data-i="${i}">−</button>
+          <span class="qv">${fq(l.qty)} ${uomL(l.uom)}</span>
+          <button class="qb" data-act="inc" data-i="${i}">+</button>
+        </td>
+        <td class="r">${fmt(calc(it, l))}</td>
+        <td><button class="x" data-act="del" data-i="${i}">✕</button></td>
+      </tr>`;
+    }).join('') + '</table>';
+  }
+  $('total').textContent = fmt(totalOf(snapshot()));
+}
+
+$('lines').onclick = e => {
+  const b = e.target.closest('button'); if(!b) return;
+  const i = +b.dataset.i, l = cart[i]; if(!l) return;
+  const act = b.dataset.act;
+  if(act === 'inc') l.qty = r2(l.qty + stepFor(l.uom));
+  if(act === 'dec'){ l.qty = r2(l.qty - stepFor(l.uom)); if(l.qty <= 0) cart.splice(i, 1); }
+  if(act === 'del') cart.splice(i, 1);
+  save(); renderCart();
+};
+
+function showCard(it, qty, uom){
+  $('card').style.display = 'block';
+  $('cardPic').innerHTML = picHTML(it);
+  const other = lang === 'en' ? it.ta : it.en;
+  $('cardName').textContent = nm(it) + (other ? ` · ${other}` : '');
+  $('cardQty').textContent = `${fq(qty)} ${uomL(uom)}  ·  ${fmt(calc(it, {qty, uom}))}`;
+}
+
+/* ================= PRODUCT GRID (tap = add 1) ================= */
+function renderGrid(){
+  $('grid').innerHTML = items.map(it =>
+    `<button class="tile" data-add="${it.id}">
+       <div class="pic">${picHTML(it)}</div>
+       <div>${esc(nm(it))}</div>
+       <small>${fmt(it.price)}/${uomL(it.unit)}</small>
+     </button>`).join('');
+}
+$('grid').onclick = e => {
+  const b = e.target.closest('[data-add]'); if(!b) return;
+  const it = itemById(b.dataset.add); if(!it) return;
+  addLine(it, 1, it.unit);
+  showCard(it, 1, it.unit);
+  setStatus(T('tile', {name: nm(it), unit: uomL(it.unit)}));
+  speak(T('spokenAdded', {msg: nm(it)}));
+};
+
+function renderAll(){ renderGrid(); renderCart(); }
+
+/* ================= BILLING ================= */
+function finalizeBill(){
+  if(!cart.length){ setStatus(T('noItems'), true); return; }
+  const lines = snapshot();
+  const no = (bills.length ? last(bills).no : 0) + 1;
+  const bill = {no, date:new Date().toISOString(), lines, total:totalOf(lines)};
+  bills.push(bill);
+  cart = [];
+  save(); renderCart();
+  setStatus(T('billDone', {n: no, total: fmt(bill.total)}));
+  speak(T('spokenBill', {n: Math.round(bill.total)}));
+  showBill(bill, false);
+}
+
+function billHTML(b, draft){
+  const rows = b.lines.map((l, i) =>
+    `<tr><td>${i+1}</td><td>${esc(nm({ta:l.ta, en:l.en}))}</td><td class="r">${fq(l.qty)} ${uomL(l.uom)}</td><td class="r">${fmt(l.amount)}</td></tr>`
+  ).join('');
+  const head = draft ? T('draftLabel') : `${T('billNo')} ${b.no}`;
+  return `
+    <div class="bh"><b>${esc(shop)}</b><div>${head} · ${fmtDate(b.date)}</div></div>
+    <table class="bt">
+      <tr><th>#</th><th>${T('colItem')}</th><th class="r">${T('colQty')}</th><th class="r">${T('colAmt')}</th></tr>
+      ${rows}
+      <tr class="tt"><td colspan="3" class="r">${T('total')}</td><td class="r">${fmt(b.total)}</td></tr>
+    </table>
+    <div class="foot">${T('thanks')}</div>`;
+}
+
+function billText(b, draft){
+  const head = draft ? T('draftLabel') : `${T('billNo')} ${b.no}`;
+  return `${shop}\n${head}\n` +
+    b.lines.map(l => `${nm({ta:l.ta, en:l.en})} ${fq(l.qty)} ${uomL(l.uom)} = ${fmt(l.amount)}`).join('\n') +
+    `\n\n${T('total')}: ${fmt(b.total)}\n${T('thanks')}`;
+}
+
+function shareWA(text){ window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank'); }
+function printBill(b, draft){ $('printArea').innerHTML = billHTML(b, draft); window.print(); }
+
+function showBill(b, draft){
+  $('billBody').innerHTML = billHTML(b, draft);
+  $('billPrint').onclick = () => printBill(b, draft);
+  $('billShare').onclick = () => shareWA(billText(b, draft));
+  $('billDlg').showModal();
+}
+$('billClose').onclick = () => $('billDlg').close();
+
+$('btnBill').onclick = finalizeBill;
+$('btnClear').onclick = () => {
+  if(cart.length && confirm(T('confirmClear'))){ cart = []; save(); renderCart(); setStatus(T('cleared')); }
+};
+$('btnShare').onclick = () => {
+  if(!cart.length){ setStatus(T('noItems'), true); return; }
+  const lines = snapshot();
+  shareWA(billText({no:'', date:new Date().toISOString(), lines, total:totalOf(lines)}, true));
+};
+
+/* ================= HISTORY ================= */
+$('btnHist').onclick = () => {
+  $('histList').innerHTML = bills.length
+    ? [...bills].reverse().map(b =>
+        `<div class="hrow" data-no="${b.no}"><b>${T('billNo')} ${b.no}</b> · ${new Date(b.date).toLocaleDateString('en-IN')}
+         <span class="r" style="float:right">${fmt(b.total)}</span></div>`).join('')
+    : `<div class="empty">${T('noBills')}</div>`;
+  $('histDlg').showModal();
+};
+$('histList').onclick = e => {
+  const row = e.target.closest('[data-no]'); if(!row) return;
+  const b = bills.find(x => String(x.no) === row.dataset.no);
+  if(b) showBill(b, false);
+};
+$('closeHist').onclick = () => $('histDlg').close();
+
+/* ================= ITEMS & PRICES ================= */
+function renderItemsDlg(){
+  $('itemsList').innerHTML = items.map(it => {
+    const other = lang === 'en' ? it.ta : it.en;
+    return `<div class="item-edit">
+       <div class="ph" data-photo="${it.id}" title="${T('photoTitle')}">${picHTML(it)}</div>
+       <div class="info"><b>${esc(nm(it))}</b><br><small>${esc(other || '')} · ${uomL(it.unit)}</small></div>
+       <input type="number" min="0" step="0.5" value="${it.price}" data-price="${it.id}" class="pin">
+       <button class="x" data-del="${it.id}">✕</button>
+     </div>`;
+  }).join('');
+  $('shopName').value = shop;
+}
+$('btnItems').onclick = () => { renderItemsDlg(); $('itemsDlg').showModal(); };
+$('closeItems').onclick = () => $('itemsDlg').close();
+
+$('itemsList').onclick = e => {
+  const ph = e.target.closest('[data-photo]');
+  if(ph){ photoTarget = ph.dataset.photo; $('photoIn').click(); return; }
+  const d = e.target.closest('[data-del]');
+  if(d && confirm(T('confirmDel'))){
+    items = items.filter(i => i.id !== d.dataset.del);
+    save(); renderAll(); renderItemsDlg();
+  }
+};
+$('itemsList').onchange = e => {
+  const p = e.target.closest('[data-price]'); if(!p) return;
+  const it = itemById(p.dataset.price); if(!it) return;
+  it.price = Number(p.value) || 0;
+  save(); renderAll();
+};
+
+// Daily price update: paste "name, price" lines (Tamil or English names both match)
+$('applyPrices').onclick = () => {
+  const lines = $('priceIn').value.split('\n').map(s => s.trim()).filter(Boolean);
+  let ok = 0; const miss = [];
+  for(const line of lines){
+    const m = line.match(/^(.*?)[\s,:=\-]+(\d+(?:\.\d+)?)$/);
+    if(!m){ miss.push(line); continue; }
+    const key = norm(m[1]);
+    const it = items.find(i => [i.ta, i.en, ...(i.alias || [])].some(a => norm(a || '') === key));
+    if(it){ it.price = Number(m[2]); ok++; } else miss.push(m[1].trim());
+  }
+  save(); renderAll(); renderItemsDlg();
+  if(ok && !miss.length) $('priceIn').value = '';
+  const msg = T('updated', {n: ok}) + (miss.length ? '. ' + T('notFound', {names: miss.join(', ')}) : '');
+  setStatus(msg, ok === 0 && miss.length > 0);
+};
+
+function shrink(file){
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const s = Math.min(1, 240 / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', 0.8));
+      };
+      img.onerror = reject;
+      img.src = fr.result;
+    };
+    fr.onerror = reject;
+    fr.readAsDataURL(file);
+  });
+}
+$('photoIn').onchange = async e => {
+  const f = e.target.files[0];
+  if(f && photoTarget){
+    try{
+      const it = itemById(photoTarget);
+      it.photo = await shrink(f);
+      save(); renderAll(); renderItemsDlg();
+    }catch(err){ setStatus(T('photoFail'), true); }
+  }
+  e.target.value = ''; photoTarget = null;
+};
+
+$('addItem').onclick = () => {
+  const ta = $('nTa').value.trim(), en = $('nEn').value.trim();
+  if(!ta && !en){ setStatus(T('needName'), true); return; }
+  const alias = $('nAlias').value.split(',').map(s => s.trim()).filter(Boolean);
+  items.push({
+    id:'i' + Date.now(), ta, en, alias,
+    unit: $('nUnit').value,
+    price: Number($('nPrice').value) || 0,
+    emoji: $('nEmoji').value.trim() || '🛒'
+  });
+  save(); renderAll(); renderItemsDlg();
+  ['nTa','nEn','nAlias','nPrice','nEmoji'].forEach(id => $(id).value = '');
+  setStatus(T('itemAdded', {name: ta || en}));
+};
+$('shopName').onchange = e => { shop = e.target.value.trim() || shop; save(); };
+
+/* ================= MANUAL TYPING ================= */
+$('manual').onsubmit = e => {
+  e.preventDefault();
+  const v = $('typed').value.trim();
+  if(!v) return;
+  $('typed').value = '';
+  handleInput([v]);
+};
+
+/* ================= MIC (Web Speech API) ================= */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const mic = $('mic');
+let rec = null, listening = false;
+
+function setMic(v){
+  listening = v;
+  mic.classList.toggle('on', v);
+  mic.textContent = v ? T('micOn') : T('micIdle');
+}
+
+if(!window.isSecureContext){
+  setStatus(lang === 'en' ? 'Open this app through its https:// link, not a file. Mic needs https.' : 'இந்த பக்கத்தை https:// இணைப்பின் மூலம் திறக்கவும். மைக்குக்கு https தேவை.', true);
+}
+if(SR){
+  rec = new SR();
+  rec.continuous = false;
+  rec.interimResults = false;
+  rec.maxAlternatives = 5;
+  rec.onresult = e => {
+    const res = e.results[0], alts = [];
+    for(let i = 0; i < res.length; i++) alts.push(res[i].transcript);
+    handleInput(alts);
+  };
+  rec.onerror = e => {
+    if(e.error !== 'aborted') setStatus(I18N[lang].err[e.error] || (lang === 'en' ? 'Error: ' : 'பிழை: ') + e.error, true);
+    setMic(false);
+  };
+  rec.onend = () => setMic(false);
+  mic.onclick = () => {
+    if(listening){ rec.stop(); return; }
+    try{
+      rec.lang = I18N[lang].speechLang;
+      rec.start(); setMic(true); setStatus(T('micStart'));
+    }catch(e){ setStatus(T('retry') + ' [' + e.name + ']', true); }
+  };
+}
+
+/* ================= LANGUAGE SWITCH ================= */
+function applyLang(){
+  document.documentElement.lang = lang === 'en' ? 'en' : 'ta';
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = T(el.dataset.i18n); });
+  document.querySelectorAll('[data-ph]').forEach(el => { el.placeholder = T(el.dataset.ph); });
+  $('btnLang').textContent = T('toggleLabel');
+  $('nUnit').innerHTML = ['kg','piece','litre','packet'].map(u => `<option value="${u}">${uomL(u)}</option>`).join('');
+  $('priceIn').placeholder = T('updatePh');
+  document.title = T('title');
+  if(!SR){ mic.disabled = true; mic.textContent = T('noVoice').split('.')[0]; setStatus(T('noVoice'), true); }
+  else setMic(listening);
+  renderAll();
+}
+
+$('btnLang').onclick = () => {
+  lang = lang === 'ta' ? 'en' : 'ta';
+  localStorage.setItem(K.lang, lang);
+  if(!shop || shop === 'எங்கள் கடை' || shop === 'Our Shop') shop = lang === 'en' ? 'Our Shop' : 'எங்கள் கடை';
+  save();
+  applyLang();
+  setStatus(T('hint'));
+  if($('itemsDlg').open) renderItemsDlg();
+};
+
+/* ================= START ================= */
+applyLang();
+if(window.isSecureContext) setStatus(cart.length ? T('resume') : T('hint'));
+</script>
+</body>
+</html>
