@@ -310,7 +310,7 @@ const DEFAULT_ITEMS = [
   {id:'brinjal',     ta:'கத்தரிக்காய்',        en:'Brinjal',      rn:'KATHARIKAI BLUE', alias:['kathirikai','கத்தரி','katharikai','eggplant','blue brinjal'], unit:'kg', price:40, emoji:'🍆'},
   {id:'ladiesfinger',ta:'வெண்டைக்காய்',        en:'Ladies Finger', alias:['vendakkai','வெண்டை','okra'],         unit:'kg',     price:35,  emoji:'🫛'},
   {id:'madhulai',    ta:'மாதுளை',             en:'Pomegranate', rn:'MADHULAI BIG', alias:['madhulai','madhulai big','pomegranate','pomegrande','மாதுளை'], unit:'kg', price:350, emoji:'🍎'},
-  {id:'atta',        ta:'ஆட்டா 1 கிலோ',        en:'Atta 1kg',     rn:'ATTA 1KG', alias:['atta','aata','ஆட்டா','கோதுமை மாவு','wheat flour'], unit:'piece', price:73, emoji:'🌾'},
+  {id:'atta',        ta:'ஆட்டா 1 கிலோ',        en:'Atta 1kg',     rn:'ATTA 1KG', alias:['atta','aata','atta maavu','ஆட்டா','ஆட்டா மாவு','அட்டா','அட்டா மாவு','கோதுமை மாவு','wheat flour'], unit:'packet', price:73, emoji:'🌾'},
   {id:'aavin',       ta:'ஆவின் ரெட்',          en:'Aavin Red',    alias:['aavin','avin','ஆவின்','ஆவின் பால்'],   unit:'packet', price:32,  emoji:'🥛'},
   {id:'podalankai',  ta:'புடலங்காய்',          en:'Podalankai',   alias:['podalangai','pudalangai','snake gourd','புடலங்காய்'], unit:'kg', price:64, emoji:'🥒'},
   {id:'pirkkangai',  ta:'பீர்க்கங்காய்',       en:'Pirkkangai',   alias:['peerkkangai','peerkangai','pirkkankai','ridge gourd','பீர்க்கங்காய்'], unit:'kg', price:88, emoji:'🥒'},
@@ -362,6 +362,14 @@ for(const d of DEFAULT_ITEMS){
   else if(d.rn && !ex.rn) ex.rn = d.rn;
 }
 // One-time sync of items already saved on a phone with the shop's price list
+try{
+  if(!localStorage.getItem('tb.sync.v4')){
+    const d = DEFAULT_ITEMS.find(i => i.id === 'atta');
+    const ex = items.find(i => i.id === 'atta');
+    if(ex && d){ ex.unit = d.unit; ex.alias = d.alias; ex.ta = d.ta; ex.en = d.en; }
+    localStorage.setItem('tb.sync.v4', '1');
+  }
+}catch(e){}
 try{
   if(!localStorage.getItem('tb.sync.v3')){
     for(const d of DEFAULT_ITEMS){
