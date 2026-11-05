@@ -81,6 +81,11 @@ dialog textarea{min-height:110px;resize:vertical}
 .bt .tt td{font-weight:700;border-bottom:0}
 .foot{text-align:center;margin-top:10px;color:#666;font-size:14px}
 .hint{font-size:13px;color:#777;margin:0 0 6px}
+.rc{font-family:"Courier New",Courier,monospace;font-size:13px;line-height:1.35;background:#fff;color:#000;margin:0;padding:8px 4px;white-space:pre;overflow-x:auto;text-align:left}
+dialog .rc{font-size:14px}
+.item-edit.off{opacity:.55}
+.onoff{display:flex;flex-direction:column;align-items:center;font-size:12px;color:#555;flex:none}
+dialog input[type=checkbox]{width:22px;height:22px;margin:2px 0 0;padding:0}
 #printArea{display:none}
 @media print{
   body *{visibility:hidden}
@@ -235,7 +240,7 @@ const I18N = {
       'language-not-supported':'இந்த மொழிக்கு குரல் ஆதரவு இல்லை',
       'audio-capture':'மைக் வேலை செய்யவில்லை'
     },
-    speechLang:'ta-IN', toggleLabel:'EN'
+    speechLang:'ta-IN', toggleLabel:'EN', activeLbl:'செயலில்'
   },
   en: {
     title:'Voice Billing', items:'Prices', hist:'Bills', dayBtn:'Day summary',
@@ -278,7 +283,7 @@ const I18N = {
       'language-not-supported':'Voice recognition not available for this language',
       'audio-capture':'Microphone not working'
     },
-    speechLang:'en-IN', toggleLabel:'தமிழ்'
+    speechLang:'en-IN', toggleLabel:'தமிழ்', activeLbl:'Active'
   }
 };
 
@@ -291,7 +296,7 @@ const K = {items:'tb.items.v1', cart:'tb.cart.v1', bills:'tb.bills.v1', lang:'tb
 const DEFAULT_ITEMS = [
   {id:'tomato',      ta:'தக்காளி',          en:'Tomato',       alias:['thakkali','takkali','tomatoes'],     unit:'kg',     price:30,  emoji:'🍅'},
   {id:'onion',       ta:'வெங்காயம்',         en:'Onion',        alias:['vengayam','onions'],                 unit:'kg',     price:40,  emoji:'🧅'},
-  {id:'potato',      ta:'உருளைக்கிழங்கு',    en:'Potato',       alias:['urulai','உருளை','potatoes'],          unit:'kg',     price:35,  emoji:'🥔'},
+  {id:'potato',      ta:'உருளைக்கிழங்கு',    en:'Potato',       rn:'POTATO ( METTU PALAYAM )', alias:['urulai','உருளை','potatoes','mettu palayam'], unit:'kg', price:74, emoji:'🥔'},
   {id:'carrot',      ta:'கேரட்',             en:'Carrot',       alias:['carot','carrots'],                   unit:'kg',     price:60,  emoji:'🥕'},
   {id:'banana',      ta:'வாழைப்பழம்',         en:'Banana',       alias:['vazhaipazham','வாழை','bananas'],      unit:'piece',  price:6,   emoji:'🍌'},
   {id:'greenbanana', ta:'வாழைக்காய்',         en:'Green Banana', alias:['vazhakkai','vazhaikkai','green banana','raw banana','பச்சை வாழைக்காய்'], unit:'piece', price:5, emoji:'🍌'},
@@ -302,9 +307,15 @@ const DEFAULT_ITEMS = [
   {id:'coconut',     ta:'தேங்காய்',           en:'Coconut',      alias:['thengai','coconuts'],                unit:'piece',  price:25,  emoji:'🥥'},
   {id:'oil',         ta:'எண்ணெய்',            en:'Oil',          alias:['ennai'],                             unit:'litre',  price:150, emoji:'🛢️'},
   {id:'sugar',       ta:'சர்க்கரை',           en:'Sugar',        alias:['sakkarai'],                          unit:'kg',     price:45,  emoji:'🍬'},
-  {id:'brinjal',     ta:'கத்தரிக்காய்', en:'Brinjal',             alias:['kathirikai','கத்தரி','eggplant'], unit:'kg', price:40, emoji:'🍆'},
-  {id:'ladiesfinger', ta:'வெண்டைக்காய்', en:'Ladies Finger',   alias:['vendakkai','வெண்டை','okra'], unit:'kg', price:35, emoji:'🫛'}
-  
+  {id:'brinjal',     ta:'கத்தரிக்காய்',        en:'Brinjal',      rn:'KATHARIKAI BLUE', alias:['kathirikai','கத்தரி','katharikai','eggplant','blue brinjal'], unit:'kg', price:74, emoji:'🍆'},
+  {id:'ladiesfinger',ta:'வெண்டைக்காய்',        en:'Ladies Finger', alias:['vendakkai','வெண்டை','okra'],         unit:'kg',     price:35,  emoji:'🫛'},
+  {id:'madhulai',    ta:'',                  en:'Madhulai Big', alias:['madhulai','madhulai big'],           unit:'kg',     price:350, emoji:'🛒'},
+  {id:'atta',        ta:'ஆட்டா 1 கிலோ',        en:'Atta 1kg',     rn:'ATTA 1KG', alias:['atta','aata','ஆட்டா','கோதுமை மாவு','wheat flour'], unit:'piece', price:73, emoji:'🌾'},
+  {id:'aavin',       ta:'ஆவின் ரெட்',          en:'Aavin Red',    alias:['aavin','avin','ஆவின்','ஆவின் பால்'],   unit:'packet', price:32,  emoji:'🥛'},
+  {id:'podalankai',  ta:'புடலங்காய்',          en:'Podalankai',   alias:['podalangai','pudalangai','snake gourd','புடலங்காய்'], unit:'kg', price:64, emoji:'🥒'},
+  {id:'pirkkangai',  ta:'பீர்க்கங்காய்',       en:'Pirkkangai',   alias:['peerkkangai','peerkangai','ridge gourd','பீர்க்கங்காய்'], unit:'kg', price:88, emoji:'🥒'},
+  {id:'sorakkai',    ta:'சுரைக்காய்',          en:'Sorakkai',     alias:['surakkai','bottle gourd','சுரைக்காய்'], unit:'kg',     price:65,  emoji:'🥒'},
+  {id:'koadaimilagai',ta:'கொடை மிளகாய்',       en:'Koadai Milagai', alias:['kodai milagai','kodaimilagai','கொடை மிளகாய்'], unit:'kg', price:100, emoji:'🌶️'}
 ];
 
 const WORDS = {
@@ -339,12 +350,17 @@ let items = load(K.items, DEFAULT_ITEMS);
 let cart  = load(K.cart, []);
 let bills = load(K.bills, []);
 let cartPhone = load(K.phone, '');
-let shopPhone = localStorage.getItem(K.sphone) || '86086 87575';
+let shopPhone = localStorage.getItem(K.sphone) || '9940016226';
+if(shopPhone === '86086 87575') shopPhone = '9940016226';
 let photoTarget = null;
 let curDay = null;
 
 // Add any new default items (e.g. Green Banana) to phones that already have a saved list
-for(const d of DEFAULT_ITEMS) if(!items.some(i => i.id === d.id)) items.push(d);
+for(const d of DEFAULT_ITEMS){
+  const ex = items.find(i => i.id === d.id);
+  if(!ex) items.push({...d});
+  else if(d.rn && !ex.rn) ex.rn = d.rn;     // keep the phone's saved price, only add receipt name
+}
 
 const T = (k, v = {}) => {
   let s = (I18N[lang] && I18N[lang][k] !== undefined) ? I18N[lang][k] : (I18N.en[k] ?? k);
@@ -412,6 +428,7 @@ function speak(text){
 function aliasList(){
   const out = [];
   for(const it of items){
+    if(it.active === false) continue;
     for(const a of [it.ta, it.en, ...(it.alias || [])]){
       const n = norm(a || '');
       if(n) out.push({a:n, item:it});
@@ -573,7 +590,7 @@ function snapshot(){
   return cart.map(l => {
     const it = itemById(l.itemId);
     return {
-      ta: it?.ta || '?', en: it?.en || '',
+      ta: it?.ta || '?', en: it?.en || '', rn: it?.rn || '',
       qty: l.qty, uom: l.uom,
       price: it?.price || 0,
       amount: r2m(calc(it, l))
@@ -642,7 +659,7 @@ function showCard(it, qty, uom){
 
 /* ================= PRODUCT GRID (tap = add 1) ================= */
 function renderGrid(){
-  $('grid').innerHTML = items.map(it =>
+  $('grid').innerHTML = items.filter(it => it.active !== false).map(it =>
     `<button class="tile" data-add="${it.id}">
        <div class="pic">${picHTML(it)}</div>
        <div>${esc(nm(it))}</div>
@@ -744,29 +761,64 @@ function finalizeBill(){
   showBill(bill, false);
 }
 
-function billHTML(b, draft){
-  const rows = b.lines.map((l, i) =>
-    `<tr><td>${i+1}</td><td>${esc(nm({ta:l.ta, en:l.en}))}</td><td class="r">${fq(l.qty)} ${uomL(l.uom)}</td><td class="r">${fmt(l.amount)}</td></tr>`
-  ).join('');
-  const head = draft ? T('draftLabel') : `${T('billNo')} ${b.no}`;
-  const cust = b.phone ? `<div>${T('customer')}: ${esc(fmtPhone(b.phone))}</div>` : '';
-  return `
-    <div class="bh"><b>${esc(shopName())}</b><div>${head} · ${fmtDate(b.date)}</div>${cust}</div>
-    <table class="bt">
-      <tr><th>#</th><th>${T('colItem')}</th><th class="r">${T('colQty')}</th><th class="r">${T('colAmt')}</th></tr>
-      ${rows}
-      <tr class="tt"><td colspan="3" class="r">${T('total')}</td><td class="r">${fmt(b.total)}</td></tr>
-    </table>
-    <div class="foot">${T('cellLabel')}: ${esc(shopPhone)}<br>${T('thanks')}</div>`;
+/* ================= RECEIPT (same layout as the shop's printed bill) ================= */
+const RC = {
+  W: 40,
+  shop: 'ABIRAMI STORE',
+  addr: ['6/47 perummal kovil street,', 'Rajankuppam,Chennai-95'],
+  gst: 'GST No : 33BFGPN4893C1ZF',
+  cashier: 'CASHIER1',
+  billType: 'CASH BILL',
+  footer: ['DOOR DELIVERY FREE', '8608687575', 'WHATSAPP/ GPAY NO', '9940016226/8667695433', 'Thank You !!!.Visit Again !!!.']
+};
+const rcCenter = s => ' '.repeat(Math.max(0, Math.floor((RC.W - s.length) / 2))) + s;
+const rcRule = () => '-'.repeat(RC.W);
+const rcLR = (l, r) => l + ' '.repeat(Math.max(1, RC.W - l.length - r.length)) + r;
+const rcMoney = n => Number(n).toFixed(2);
+const rcDate = d => {
+  const x = new Date(d), h = x.getHours();
+  return `${pad2(x.getDate())}/${pad2(x.getMonth() + 1)}/${x.getFullYear()} ${pad2(h % 12 || 12)}:${pad2(x.getMinutes())}:${h < 12 ? 'AM' : 'PM'}`;
+};
+const rcName = l => String(l.rn || l.en || l.ta || '?').toUpperCase();
+const rcIsWeight = l => ['g', 'kg', 'litre'].includes(l.uom);
+const rcQtyKg = l => l.uom === 'g' ? l.qty / 1000 : l.qty;
+const rcQtyTxt = l => rcIsWeight(l) ? rcQtyKg(l).toFixed(3) : String(l.qty);
+
+function receiptText(b, draft){
+  const out = [];
+  out.push(rcCenter(RC.shop));
+  RC.addr.forEach(a => out.push(rcCenter(a)));
+  out.push(rcCenter(shopPhone));
+  out.push(rcCenter(RC.gst));
+  out.push(rcRule());
+  out.push(rcLR('BillNo : ' + (draft ? '-' : b.no), 'Date : ' + rcDate(b.date)));
+  out.push(rcLR('Cashier : ' + RC.cashier, 'BillType : ' + RC.billType));
+  if(b.phone) out.push('Customer : ' + fmtPhone(b.phone));
+  out.push(rcRule());
+  out.push('SNO DESCRIPTION');
+  out.push('QTY'.padStart(17) + 'RATE'.padStart(10) + 'AMOUNT'.padStart(13));
+  out.push(rcRule());
+  b.lines.forEach((l, i) => {
+    out.push(String(i + 1).padEnd(4) + rcName(l));
+    out.push(rcQtyTxt(l).padStart(17) + rcMoney(l.price).padStart(10) + rcMoney(l.amount).padStart(13));
+  });
+  out.push(rcRule());
+  const gross = b.total;
+  const total = Math.round(gross);
+  out.push('Gross Amount :'.padStart(27) + rcMoney(gross).padStart(13));
+  out.push('Coinage :'.padStart(27) + rcMoney(total - gross).padStart(13));
+  out.push('Total Amount :'.padStart(27) + rcMoney(total).padStart(13));
+  out.push(rcRule());
+  const qsum = b.lines.reduce((s, l) => s + (rcIsWeight(l) ? rcQtyKg(l) : l.qty), 0);
+  out.push(rcLR('Total Items : ' + b.lines.length, 'Total Qty : ' + r2(qsum)));
+  out.push(rcRule());
+  RC.footer.forEach(f => out.push(rcCenter(f)));
+  return out.join('\n');
 }
 
-function billText(b, draft){
-  const head = draft ? T('draftLabel') : `${T('billNo')} ${b.no}`;
-  const cust = b.phone ? `\n${T('customer')}: ${fmtPhone(b.phone)}` : '';
-  return `${shopName()}\n${head}${cust}\n` +
-    b.lines.map(l => `${nm({ta:l.ta, en:l.en})} ${fq(l.qty)} ${uomL(l.uom)} = ${fmt(l.amount)}`).join('\n') +
-    `\n\n${T('total')}: ${fmt(b.total)}\n${T('cellLabel')}: ${shopPhone}\n${T('thanks')}`;
-}
+function billHTML(b, draft){ return `<pre class="rc">${esc(receiptText(b, draft))}</pre>`; }
+// WhatsApp: wrapped in ``` so the columns stay aligned (monospace)
+function billText(b, draft){ return '```\n' + receiptText(b, draft) + '\n```'; }
 
 // Opens WhatsApp; if a customer number is known, the chat opens with that customer
 function shareWA(text, phone){
@@ -812,9 +864,10 @@ $('closeHist').onclick = () => $('histDlg').close();
 function renderItemsDlg(){
   $('itemsList').innerHTML = items.map(it => {
     const other = lang === 'en' ? it.ta : it.en;
-    return `<div class="item-edit">
+    return `<div class="item-edit${it.active === false ? ' off' : ''}">
        <div class="ph" data-photo="${it.id}" title="${T('photoTitle')}">${picHTML(it)}</div>
        <div class="info"><b>${esc(nm(it))}</b><br><small>${esc(other || '')} · ${uomL(it.unit)}</small></div>
+       <label class="onoff"><input type="checkbox" data-active="${it.id}" ${it.active === false ? '' : 'checked'}>${T('activeLbl')}</label>
        <input type="number" min="0" step="0.5" value="${it.price}" data-price="${it.id}" class="pin">
        <button class="x" data-del="${it.id}">✕</button>
      </div>`;
@@ -839,6 +892,11 @@ $('itemsList').onclick = e => {
   }
 };
 $('itemsList').onchange = e => {
+  if(e.target.dataset && e.target.dataset.active){
+    const it = itemById(e.target.dataset.active);
+    if(it){ it.active = e.target.checked; save(); renderAll(); renderItemsDlg(); }
+    return;
+  }
   const p = e.target.closest('[data-price]'); if(!p) return;
   const it = itemById(p.dataset.price); if(!it) return;
   it.price = Number(p.value) || 0;
@@ -901,7 +959,7 @@ $('addItem').onclick = () => {
     id:'i' + Date.now(), ta, en, alias,
     unit: $('nUnit').value,
     price: Number($('nPrice').value) || 0,
-    emoji: $('nEmoji').value.trim() || '🛒'
+    emoji: $('nEmoji').value.trim() || '🛒', active: true
   });
   save(); renderAll(); renderItemsDlg();
   ['nTa','nEn','nAlias','nPrice','nEmoji'].forEach(id => $(id).value = '');
