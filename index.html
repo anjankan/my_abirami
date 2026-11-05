@@ -437,7 +437,7 @@ function findMatches(t, list){
   }
   return hits.sort((x, y) => x.start - y.start);
 }
-
+<---
 function parseQty(seg){
   let qty = null, gram = false;
   for(const tok of seg.split(' ')){
@@ -449,7 +449,26 @@ function parseQty(seg){
     }
   }
   return {qty, gram};
+} -->
+
+function parseQty(seg){
+  let qty = null, gram = false;
+  for(const raw of seg.split(' ')){
+    if(!raw) continue;
+    // split "300gms" or "300கிராம்" into number + unit
+    const m = raw.match(/^(\d+(?:\.\d+)?)(.*)$/);
+    const parts = m ? [m[1], m[2]].filter(Boolean) : [raw];
+    for(const tok of parts){
+      if(isGram(tok)) gram = true;
+      if(qty === null){
+        if(/^\d+(\.\d+)?$/.test(tok)) qty = parseFloat(tok);
+        else if(WORDS[tok] !== undefined) qty = WORDS[tok];
+      }
+    }
+  }
+  return {qty, gram};
 }
+  
 
 // Longest run of consecutive digits (as numerals or spoken digit words)
 function bestDigitRun(tokens){
