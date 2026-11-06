@@ -155,6 +155,8 @@ dialog input[type=checkbox]{width:22px;height:22px;margin:2px 0 0;padding:0}
   <textarea id="priceIn" data-ph="updatePh"></textarea>
   <button class="btn" id="applyPrices" style="width:100%" data-i18n="updateBtn"></button>
 
+  <div id="heardList"></div>
+
   <h3 data-i18n="newItem"></h3>
   <input id="nTa" data-ph="nameTa">
   <input id="nEn" data-ph="nameEn">
@@ -242,7 +244,7 @@ const I18N = {
       'language-not-supported':'இந்த மொழிக்கு குரல் ஆதரவு இல்லை',
       'audio-capture':'மைக் வேலை செய்யவில்லை'
     },
-    speechLang:'ta-IN', toggleLabel:'EN', activeLbl:'செயலில்'
+    speechLang:'ta-IN', toggleLabel:'EN', activeLbl:'செயலில்', heardTitle:'புரியாத சொற்கள் (சமீபத்தியவை)', heardHint:'பொருளைத் தேர்ந்தெடுத்து சேர்க்கவும் — அது அந்த பொருளின் மாற்றுப் பெயராகும்', heardAdd:'சேர்', heardClear:'அழி', heardNone:'புரியாத சொற்கள் இல்லை', aliasAdded:'{name} — மாற்றுப் பெயர் சேர்க்கப்பட்டது'
   },
   en: {
     title:'Voice Billing', items:'Prices', hist:'Bills', dayBtn:'Day summary',
@@ -285,7 +287,7 @@ const I18N = {
       'language-not-supported':'Voice recognition not available for this language',
       'audio-capture':'Microphone not working'
     },
-    speechLang:'en-IN', toggleLabel:'தமிழ்', activeLbl:'Active'
+    speechLang:'en-IN', toggleLabel:'Tamil', activeLbl:'Active', heardTitle:'Not understood (recent)', heardHint:'Choose the item and tap Add: the words become its other names', heardAdd:'Add', heardClear:'Clear', heardNone:'Nothing unclear so far', aliasAdded:'{name}: other name added'
   }
 };
 
@@ -300,7 +302,7 @@ const DEFAULT_ITEMS = [
   {id:'onion',       ta:'வெங்காயம்',         en:'Onion',        alias:['vengayam','onions'],                 unit:'kg',     price:40,  emoji:'🧅'},
   {id:'potato',      ta:'உருளைக்கிழங்கு',    en:'Potato',       rn:'POTATO ( METTU PALAYAM )', alias:['urulai','உருளை','potatoes','mettu palayam'], unit:'kg', price:35, emoji:'🥔'},
   {id:'carrot',      ta:'கேரட்',             en:'Carrot',       alias:['carot','carrots'],                   unit:'kg',     price:60,  emoji:'🥕'},
-  {id:'moris',  ta:'மாரிஸ்', en:'Moris Banana',  alias:['moris','morris','moris banana','moris vazhaipazham'],   unit:'kg', price:0, emoji:'🍌'},
+  {id:'moris',  ta:'மாரிஸ்', en:'Moris Banana',  alias:['moris','morris','மோரிஸ்','moris banana','moris vazhaipazham','மோரிஸ் வாழைப்பழம்'],   unit:'kg', price:0, emoji:'🍌'},
   {id:'yelakki', ta:'ஏலக்கி', en:'Yelaki Banana', alias:['yelaki','yelakki','yelaki banana','yelaki vazhaipazham'], unit:'kg', price:0, emoji:'🍌'},
   {id:'greenbanana', ta:'வாழைக்காய்',         en:'Green Banana', alias:['vazhakkai','vazhaikkai','green banana','raw banana','பச்சை வாழைக்காய்'], unit:'piece', price:5, emoji:'🍌'},
   {id:'rice',        ta:'அரிசி',             en:'Rice',         alias:['arisi'],                             unit:'kg',     price:55,  emoji:'🍚', active:false},
@@ -353,7 +355,9 @@ const DIGIT_WORDS = {
 };
 const PHONE_KEYS = ['number','mobile','phone','whatsapp','customer','நம்பர்','எண்','மொபைல்','போன்','வாடிக்கையாளர்'];
 
-let lang  = localStorage.getItem(K.lang) || 'ta';
+let lang  = localStorage.getItem(K.lang) || 'en';
+if(!localStorage.getItem('tb.lang.default.v2')){ lang = 'en'; localStorage.setItem(K.lang, 'en'); localStorage.setItem('tb.lang.default.v2', '1'); }
+const VOICE_LANG = 'ta-IN';   // the app always listens in Tamil; the screen language does not change this
 let items = load(K.items, DEFAULT_ITEMS);
 let cart  = load(K.cart, []);
 let bills = load(K.bills, []);
@@ -571,6 +575,20 @@ function analyze(raw){
   return {hits:out, cmd, phone, phoneBad};
 }
 
+const HEARD_KEY = 'tb.heard.v1';
+function getHeard(){ try{ return JSON.parse(localStorage.getItem(HEARD_KEY)) || []; }catch(e){ return []; } }
+function setHeard(list){ try{ localStorage.setItem(HEARD_KEY, JSON.stringify(list)); }catch(e){} }
+// keep only the item words: drop numbers, quantity words and unit words, so "மோரிஸ் 500" is saved as "மோரிஸ்"
+const UNIT_WORDS = ['கிலோ','kilo','kilos','kg','கிராம்','gram','grams','gm','gms','g','பாக்கெட்','packet','packets','litre','லிட்டர்','pcs','piece','pieces','எண்ணிக்கை'];
+function cleanPhrase(text){
+  return norm(text || '').split(' ').filter(w => w && !/^\d+(\.\d+)?$/.test(w) && WORDS[w] === undefined && !UNIT_WORDS.includes(w) && !isGram(w)).join(' ');
+}
+function rememberHeard(text){
+  const t = cleanPhrase(text);
+  if(!t) return;
+  setHeard([t, ...getHeard().filter(x => x !== t)].slice(0, 15));
+}
+
 function handleInput(alts){
   let chosen = null;
   for(const a of alts){
@@ -578,6 +596,7 @@ function handleInput(alts){
     if(r.hits.length || r.cmd || r.phone || r.phoneBad){ chosen = r; break; }
   }
   if(!chosen){
+    rememberHeard(alts[0]);
     setStatus(T('notUnderstood', {t: alts[0]}), true);
     return;
   }
@@ -643,7 +662,7 @@ function renderCart(){
   } else {
     box.innerHTML = '<table>' + cart.map((l, i) => {
       const it = itemById(l.itemId) || {ta:'?', en:'', emoji:'❔'};
-      const other = lang === 'en' ? it.ta : it.en;
+      const other = lang === 'en' ? '' : it.en;
       return `<tr>
         <td class="pc">${picHTML(it)}</td>
         <td><b>${esc(nm(it))}</b><br><small>${esc(other || '')}</small></td>
@@ -697,7 +716,7 @@ $('custPhone').onchange = e => {
 function showCard(it, qty, uom){
   $('card').style.display = 'block';
   $('cardPic').innerHTML = picHTML(it);
-  const other = lang === 'en' ? it.ta : it.en;
+  const other = lang === 'en' ? '' : it.en;
   $('cardName').textContent = nm(it) + (other ? ` · ${other}` : '');
   $('cardQty').textContent = `${fq(qty)} ${uomL(uom)}  ·  ${fmt(calc(it, {qty, uom}))}`;
 }
@@ -908,17 +927,45 @@ $('closeHist').onclick = () => $('histDlg').close();
 /* ================= ITEMS & PRICES ================= */
 function renderItemsDlg(){
   $('itemsList').innerHTML = items.map(it => {
-    const other = lang === 'en' ? it.ta : it.en;
+    const other = lang === 'en' ? '' : it.en;
     return `<div class="item-edit${it.active === false ? ' off' : ''}">
        <div class="ph" data-photo="${it.id}" title="${T('photoTitle')}">${picHTML(it)}</div>
-       <div class="info"><b>${esc(nm(it))}</b><br><small>${esc(other || '')} · ${uomL(it.unit)}</small></div>
+       <div class="info"><b>${esc(nm(it))}</b><br><small>${esc(other || '')} · ${uomL(it.unit)}</small>
+         <input type="text" data-alias="${it.id}" value="${esc((it.alias || []).join(', '))}" placeholder="${T('alias')}" style="margin:4px 0 0;padding:6px;font-size:14px"></div>
        <label class="onoff"><input type="checkbox" data-active="${it.id}" ${it.active === false ? '' : 'checked'}>${T('activeLbl')}</label>
        <input type="number" min="0" step="0.5" value="${it.price}" data-price="${it.id}" class="pin">
        <button class="x" data-del="${it.id}">✕</button>
      </div>`;
   }).join('');
   $('shopPhone').value = shopPhone;
+  renderHeard();
 }
+
+function renderHeard(){
+  const list = getHeard();
+  const opts = items.map(i => `<option value="${esc(i.id)}">${esc(nm(i))}</option>`).join('');
+  $('heardList').innerHTML = list.length
+    ? `<h3>${T('heardTitle')}</h3><p class="hint">${T('heardHint')}</p>` +
+      list.map((t, k) => `<div class="item-edit" style="align-items:center">
+          <div class="info"><b>${esc(t)}</b></div>
+          <select data-heard-item="${k}" style="width:auto;margin:0;padding:6px">${opts}</select>
+          <button class="btn" style="padding:8px 10px" data-heard-add="${k}">${T('heardAdd')}</button>
+        </div>`).join('') +
+      `<button class="btn alt" id="heardClear" style="width:100%">${T('heardClear')}</button>`
+    : '';
+}
+$('heardList').onclick = e => {
+  if(e.target.id === 'heardClear'){ setHeard([]); renderHeard(); return; }
+  const b = e.target.closest('[data-heard-add]'); if(!b) return;
+  const k = +b.dataset.heardAdd;
+  const list = getHeard(); const phrase = list[k];
+  const sel = $('heardList').querySelector(`[data-heard-item="${k}"]`);
+  const it = itemById(sel && sel.value); if(!it || !phrase) return;
+  it.alias = [...new Set([...(it.alias || []), phrase])];
+  setHeard(list.filter((_, i) => i !== k));
+  save(); renderAll(); renderItemsDlg();
+  setStatus(T('aliasAdded', {name: nm(it)}));
+};
 $('btnItems').onclick = () => { renderItemsDlg(); $('itemsDlg').showModal(); };
 $('closeItems').onclick = () => $('itemsDlg').close();
 
@@ -937,6 +984,15 @@ $('itemsList').onclick = e => {
   }
 };
 $('itemsList').onchange = e => {
+  if(e.target.dataset && e.target.dataset.alias){
+    const it = itemById(e.target.dataset.alias);
+    if(it){
+      it.alias = e.target.value.split(',').map(x => x.trim()).filter(Boolean);
+      save(); renderAll();
+      setStatus(T('aliasAdded', {name: nm(it)}));
+    }
+    return;
+  }
   if(e.target.dataset && e.target.dataset.active){
     const it = itemById(e.target.dataset.active);
     if(it){ it.active = e.target.checked; save(); renderAll(); renderItemsDlg(); }
@@ -1052,7 +1108,7 @@ if(SR){
   mic.onclick = () => {
     if(listening){ rec.stop(); return; }
     try{
-      rec.lang = I18N[lang].speechLang;
+      rec.lang = VOICE_LANG;
       rec.start(); setMic(true); setStatus(T('micStart'));
     }catch(e){ setStatus(T('retry') + ' [' + e.name + ']', true); }
   };
